@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1ah1UisXAFvPqWM9Fgf5N_7Z-y_o0fDy-
 """
 
-!pip install requests beautifulsoup4 pandas lxml
+
 
 import requests
 from bs4 import BeautifulSoup
