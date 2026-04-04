@@ -179,3 +179,9 @@ def run(groups=("A","B","G","N","Z")):
 # ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     run(groups=("A","B","G","N","Z"))
+
+# at the end of script.py
+from datetime import datetime
+
+with open("last_run.txt", "w") as f:
+    f.write(datetime.now().strftime("%Y-%m-%d"))
