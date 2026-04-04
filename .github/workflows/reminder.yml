@@ -1,0 +1,45 @@
+name: 90-Day Reminder
+
+on:
+  schedule:
+    - cron: "0 10 * * *"  # every day at 10 AM UTC
+  workflow_dispatch:
+
+jobs:
+  check-last-run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Check last run date
+      run: |
+        if [ ! -f last_run.txt ]; then
+          echo "No last_run.txt found, sending email."
+          exit 1
+        fi
+
+        LAST=$(cat last_run.txt)
+        TODAY=$(date +%Y-%m-%d)
+        DIFF=$(( ( $(date -d $TODAY +%s) - $(date -d $LAST +%s) ) / 86400 ))
+
+        echo "Days since last run: $DIFF"
+        if [ $DIFF -ge 90 ]; then
+          echo "It's been more than 90 days. Sending email."
+          exit 1
+        fi
+
+    - name: Send email if 90+ days
+      if: failure()
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_ADDRESS }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "⚠ DSE Scraper has not run for 90+ days"
+        to: ${{ secrets.EMAIL_ADDRESS }}
+        from: ${{ secrets.EMAIL_ADDRESS }}
+        body: "Your DSE Scraper workflow hasn't run in over 90 days. Please check it."
+        secure: true
