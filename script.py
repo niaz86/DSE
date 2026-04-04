@@ -37,51 +37,66 @@ BORDER = Border(
     bottom=Side(style="thin", color="CCCCCC"),
 )
 
-DATA_COLS  = ["DATE", "#", "TRADING CODE", "LTP*", "HIGH", "LOW",
+# GROUP column is injected at runtime (not from the scraped row)
+DATA_COLS  = ["DATE", "#", "TRADING CODE", "GROUP", "LTP*", "HIGH", "LOW",
               "CLOSEP*", "YCP*", "CHANGE", "TRADE", "VALUE (mn)", "VOLUME"]
-COL_WIDTHS = [12, 5, 16, 9, 9, 9, 10, 9, 9, 9, 12, 14]
+COL_WIDTHS = [12,      5,   16,            7,        9,      9,      9,
+              10,       9,    9,        9,       12,          14]
 
 # ── Session ───────────────────────────────────────────────────────────────────
 session = requests.Session()
 session.headers.update({
-    "User-Agent": "Mozilla/5.0",
-    "Accept-Language": "en-US,en;q=0.9"
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8",
+    "Cache-Control": "max-age=0",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) "
+                   "Chrome/146.0.0.0 Safari/537.36"),
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "sec-ch-ua": '"Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+})
+session.cookies.update({
+    "PHPSESSID": "osp4v42e6rk2i5v080df4rr0a0",   # refresh from browser if expired
 })
 
-# ── FIXED FETCH FUNCTION (IMPORTANT) ──────────────────────────────────────────
+# ── Fetch ─────────────────────────────────────────────────────────────────────
 def fetch_group(group="A"):
+    """
+    Scrape one group page using <a class="ab1"> to locate every stock row.
+    Returns a list of dicts. GROUP is NOT included here — it's added in run().
+    """
     resp = session.get(URL, params={"group": group}, timeout=15)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
     rows = []
-
-    # 🔥 Key fix: use a.ab1 (one per stock)
     for a_tag in soup.select("a.ab1"):
         tr = a_tag.find_parent("tr")
         if not tr:
             continue
-
         tds = tr.find_all("td")
         if len(tds) < 11:
             continue
-
-        code = a_tag.get_text(strip=True)
-
         rows.append({
-            "#":           tds[0].get_text(strip=True),
-            "TRADING CODE": code,
-            "LTP*":        tds[2].get_text(strip=True),
-            "HIGH":        tds[3].get_text(strip=True),
-            "LOW":         tds[4].get_text(strip=True),
-            "CLOSEP*":     tds[5].get_text(strip=True),
-            "YCP*":        tds[6].get_text(strip=True),
-            "CHANGE":      tds[7].get_text(strip=True),
-            "TRADE":       tds[8].get_text(strip=True),
-            "VALUE (mn)":  tds[9].get_text(strip=True),
-            "VOLUME":      tds[10].get_text(strip=True),
+            "#":            tds[0].get_text(strip=True),
+            "TRADING CODE": a_tag.get_text(strip=True),   # clean code from <a>
+            "LTP*":         tds[2].get_text(strip=True),
+            "HIGH":         tds[3].get_text(strip=True),
+            "LOW":          tds[4].get_text(strip=True),
+            "CLOSEP*":      tds[5].get_text(strip=True),
+            "YCP*":         tds[6].get_text(strip=True),
+            "CHANGE":       tds[7].get_text(strip=True),
+            "TRADE":        tds[8].get_text(strip=True),
+            "VALUE (mn)":   tds[9].get_text(strip=True),
+            "VOLUME":       tds[10].get_text(strip=True),
         })
-
     return rows
 
 # ── Excel helpers ─────────────────────────────────────────────────────────────
@@ -91,9 +106,10 @@ def style_header(ws):
         cell.value     = col
         cell.font      = HEADER_FONT
         cell.fill      = HEADER_FILL
-        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border    = BORDER
         ws.column_dimensions[get_column_letter(col_idx)].width = width
+    ws.row_dimensions[1].height = 32
     ws.freeze_panes = "A2"
 
 def style_data_row(ws, row_num, change_val):
@@ -101,84 +117,123 @@ def style_data_row(ws, row_num, change_val):
         change = float(str(change_val).replace(",", ""))
     except:
         change = 0
-
     if change > 0:
         fill, font = UP_FILL, UP_FONT
     elif change < 0:
         fill, font = DOWN_FILL, DOWN_FONT
     else:
         fill, font = None, NORMAL_FONT
-
     for col_idx in range(1, len(DATA_COLS) + 1):
-        cell = ws.cell(row=row_num, column=col_idx)
-        cell.font = font
-        cell.border = BORDER
+        cell           = ws.cell(row=row_num, column=col_idx)
+        cell.font      = font
+        cell.border    = BORDER
         cell.alignment = Alignment(horizontal="center", vertical="center")
-
         if fill:
             cell.fill = fill
         elif row_num % 2 == 0:
             cell.fill = ALT_FILL
 
 def get_or_create_sheet(wb, name):
-    safe = name[:31]
+    safe = name[:31]           # Excel sheet name limit
     if safe in wb.sheetnames:
         return wb[safe], False
     ws = wb.create_sheet(title=safe)
     style_header(ws)
     return ws, True
 
-def row_is_duplicate(ws, row_dict):
+def row_is_duplicate(ws, stock, group):
+    """Compare price fields of the new row against the last saved row."""
     if ws.max_row < 2:
         return False
-
-    compare_cols = list(range(4, len(DATA_COLS) + 1))
-
-    new_vals = [str(row_dict.get(DATA_COLS[c - 1], "")).strip() for c in compare_cols]
+    # Build the full ordered row (same as what we append) then compare cols 4+
+    full_new = build_row("__check__", stock, group)
+    compare_cols = list(range(4, len(DATA_COLS) + 1))   # GROUP … VOLUME
+    new_vals  = [str(full_new[c - 1]).strip() for c in compare_cols]
     last_vals = [str(ws.cell(row=ws.max_row, column=c).value or "").strip() for c in compare_cols]
-
     return new_vals == last_vals
 
-# ── Main ──────────────────────────────────────────────────────────────────────
-def run(groups=("A","B","G","N","Z")):
-    wb = load_workbook(EXCEL_FILE) if os.path.isfile(EXCEL_FILE) else Workbook()
+def build_row(today, stock, group):
+    """
+    Assemble one Excel row in DATA_COLS order:
+      DATE | # | TRADING CODE | GROUP | LTP* | HIGH | LOW |
+      CLOSEP* | YCP* | CHANGE | TRADE | VALUE (mn) | VOLUME
+    """
+    return [
+        today,
+        stock.get("#", ""),
+        stock.get("TRADING CODE", ""),
+        group,                          # injected from the loop
+        stock.get("LTP*", ""),
+        stock.get("HIGH", ""),
+        stock.get("LOW", ""),
+        stock.get("CLOSEP*", ""),
+        stock.get("YCP*", ""),
+        stock.get("CHANGE", ""),
+        stock.get("TRADE", ""),
+        stock.get("VALUE (mn)", ""),
+        stock.get("VOLUME", ""),
+    ]
 
-    if "Sheet" in wb.sheetnames:
-        wb.remove(wb["Sheet"])
+# ── Main ──────────────────────────────────────────────────────────────────────
+def run(groups=("A", "B", "G", "N", "Z")):
+    wb = load_workbook(EXCEL_FILE) if os.path.isfile(EXCEL_FILE) else Workbook()
+    for default in ("Sheet", "Sheet1"):
+        if default in wb.sheetnames and len(wb.sheetnames) > 1:
+            wb.remove(wb[default])
 
     today = datetime.now().strftime("%Y-%m-%d")
+    created = appended = duplicate = errors = 0
 
     for group in groups:
-        print(f"\nGroup {group}")
+        print(f"\n── Group {group} {'─'*35}")
+        try:
+            stocks = fetch_group(group)
+        except Exception as e:
+            print(f"  ✗ Failed: {e}")
+            errors += 1
+            continue
 
-        stocks = fetch_group(group)
+        if not stocks:
+            print("  ⚠ No rows found (market closed or session expired?)")
+            continue
 
         for stock in stocks:
-            code = stock.get("TRADING CODE","").strip()
+            code = stock.get("TRADING CODE", "").strip()
             if not code:
                 continue
+            try:
+                ws, is_new = get_or_create_sheet(wb, code)
 
-            ws, is_new = get_or_create_sheet(wb, code)
+                if not is_new and row_is_duplicate(ws, stock, group):
+                    print(f"  =  {code:<18} (duplicate – skipped)")
+                    duplicate += 1
+                    continue
 
-            if not is_new and row_is_duplicate(ws, stock):
-                print(f"= {code} (duplicate)")
-                continue
+                ws.append(build_row(today, stock, group))
+                style_data_row(ws, ws.max_row, stock.get("CHANGE", 0))
 
-            row = [today] + [stock.get(c,"") for c in DATA_COLS[1:]]
-            ws.append(row)
-            style_data_row(ws, ws.max_row, stock.get("CHANGE",0))
+                if is_new or ws.max_row == 2:
+                    print(f"  ✚  {code:<18} (new sheet)")
+                    created += 1
+                else:
+                    print(f"  ↑  {code:<18} (appended)")
+                    appended += 1
 
-            if is_new:
-                print(f"✚ {code}")
-            else:
-                print(f"↑ {code}")
+            except Exception as e:
+                print(f"  ✗  {code}: {e}")
+                errors += 1
 
     wb.save(EXCEL_FILE)
-    print("\nDONE → saved to", EXCEL_FILE)
+    print(f"\n{'═'*45}")
+    print(f"  ✚ New sheets : {created}")
+    print(f"  ↑ Appended   : {appended}")
+    print(f"  = Duplicate  : {duplicate}")
+    print(f"  ✗ Errors     : {errors}")
+    print(f"  Saved  →  {EXCEL_FILE}")
+    print(f"{'═'*45}\n")
 
-# ── Run ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    run(groups=("A","B","G","N","Z"))
+    run(groups=("A", "B", "G", "N", "Z"))
 
 # at the end of script.py
 from datetime import datetime
