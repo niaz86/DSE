@@ -1,0 +1,36 @@
+name: Run DSE Scraper Daily
+
+on:
+  schedule:
+    - cron: "0 16 * * *"   # 10 PM Bangladesh time
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run script
+      run: |
+        python script.py
+
+    - name: Commit Excel file
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "actions@github.com"
+
+        git add dse_stocks.xlsx || echo "no file"
+        git commit -m "Auto update stock data" || echo "no changes"
+        git push
