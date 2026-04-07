@@ -1,4 +1,4 @@
-name: DSE Daily Update
+name: DSE Daily Update Summary 
 
 on:
   schedule:
