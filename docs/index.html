@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSE Data Scraper & Tracker</title>
+<meta name="description" content="Automated daily scraper for the Dhaka Stock Exchange. Collects per-company financials, shareholding data, and market metrics into a growing Excel workbook.">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #080C10;
+    --surface: #0D1117;
+    --surface2: #161B22;
+    --green: #00FF88;
+    --green-dim: #00CC6A;
+    --green-dark: #003D1F;
+    --red: #FF4D6D;
+    --amber: #FFB347;
+    --text: #E6EDF3;
+    --muted: #7D8590;
+    --border: rgba(0,255,136,0.12);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── TICKER ── */
+  .ticker-wrap {
+    overflow: hidden; white-space: nowrap;
+    background: var(--green-dark);
+    border-bottom: 1px solid var(--green);
+    padding: 8px 0; position: relative; z-index: 10;
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 40s linear infinite;
+  }
+  .ticker-inner span {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; margin: 0 32px;
+  }
+  .ticker-inner span.up   { color: var(--green); }
+  .ticker-inner span.down { color: var(--red); }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(8,12,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; display: flex;
+    align-items: center; justify-content: space-between; height: 56px;
+  }
+  .nav-logo { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; }
+  .nav-logo span { color: var(--green); }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--muted); text-decoration: none;
+    transition: color 0.2s; letter-spacing: 0.05em;
+  }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta {
+    background: var(--green); color: #000;
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 13px; padding: 8px 18px; border-radius: 5px;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .nav-cta:hover { background: #00e07a; }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: calc(100vh - 56px);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 80px 24px; text-align: center; overflow: hidden;
+  }
+  .hero-glow {
+    position: absolute; width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(0,255,136,0.07) 0%, transparent 70%);
+    top: 50%; left: 50%; transform: translate(-50%, -60%);
+    pointer-events: none; animation: pulse-glow 4s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%,100% { opacity:0.6; transform:translate(-50%,-60%) scale(1); }
+    50%      { opacity:1;   transform:translate(-50%,-60%) scale(1.08); }
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green-dark); border: 1px solid var(--green);
+    color: var(--green); font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.12em;
+    padding: 6px 14px; border-radius: 4px; margin-bottom: 32px;
+    animation: fade-up 0.6s ease both;
+  }
+  .badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  h1 {
+    font-size: clamp(48px, 8vw, 96px); font-weight: 800;
+    line-height: 1; letter-spacing: -0.03em;
+    animation: fade-up 0.7s 0.1s ease both;
+  }
+  h1 .accent { color: var(--green); }
+  .hero-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(13px, 2vw, 16px); color: var(--muted);
+    max-width: 580px; margin: 20px auto 48px; line-height: 1.7;
+    animation: fade-up 0.7s 0.2s ease both;
+  }
+  .hero-ctas {
+    display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
+    animation: fade-up 0.7s 0.3s ease both;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 28px; border-radius: 6px;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; text-decoration: none; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--green); color: #000; }
+  .btn-primary:hover { background: #00e07a; transform: translateY(-2px); }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,0.15); }
+  .btn-outline:hover { border-color: var(--green); color: var(--green); transform: translateY(-2px); }
+  @keyframes fade-up {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    position: relative; z-index: 2;
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 1px; background: var(--border);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    background: var(--surface); flex: 1 1 180px;
+    padding: 28px 32px; text-align: center;
+    opacity: 0; animation: count-in 0.5s ease forwards;
+  }
+  .stat-cell:nth-child(1){animation-delay:0.1s}
+  .stat-cell:nth-child(2){animation-delay:0.2s}
+  .stat-cell:nth-child(3){animation-delay:0.3s}
+  .stat-cell:nth-child(4){animation-delay:0.4s}
+  @keyframes count-in {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .stat-num {
+    font-size: 36px; font-weight: 800; color: var(--green);
+    letter-spacing: -0.02em; display: block; line-height: 1;
+  }
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 6px; display: block;
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    position: relative; z-index: 1;
+    max-width: 1100px; margin: 0 auto; padding: 80px 24px;
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: var(--green); letter-spacing: 0.15em;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  h2 { font-size: clamp(28px,4vw,42px); font-weight: 700; letter-spacing: -0.02em; }
+
+  /* ── PIPELINE ── */
+  .pipeline {
+    display: flex; flex-wrap: wrap; gap: 0;
+    margin-top: 48px;
+  }
+  .pipe-step {
+    flex: 1 1 180px; padding: 32px 24px;
+    border: 1px solid var(--border);
+    background: var(--surface); margin: -1px 0 0 -1px;
+    transition: background 0.2s;
+  }
+  .pipe-step:hover { background: var(--surface2); }
+  .pipe-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--green); margin-bottom: 12px; display: block; }
+  .pipe-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .pipe-desc { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  /* ── FEATURES GRID ── */
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px; background: var(--border); margin-top: 48px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .feature-card { background: var(--surface); padding: 32px; transition: background 0.2s; }
+  .feature-card:hover { background: var(--surface2); }
+  .feature-icon {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: var(--green-dark); border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 16px; font-size: 18px;
+  }
+  .feature-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .feature-desc { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+  /* ── DATA TABLE ── */
+  .data-table-wrap { overflow-x: auto; margin-top: 48px; }
+  .data-table {
+    width: 100%; border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+  }
+  .data-table thead tr { background: var(--green-dark); }
+  .data-table th {
+    padding: 12px 20px; text-align: left; font-size: 11px;
+    color: var(--green); letter-spacing: 0.1em; text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td { padding: 12px 20px; border-bottom: 1px solid var(--border); color: var(--muted); }
+  .data-table td:first-child { color: var(--text); font-weight: 600; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tbody tr { transition: background 0.15s; }
+  .data-table tbody tr:hover { background: var(--surface2); }
+
+  /* ── CODE ── */
+  .code-block {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; margin-top: 48px;
+  }
+  .code-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-filename { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-left: 4px; }
+  .code-body {
+    padding: 24px 28px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.9; overflow-x: auto;
+  }
+  .cm { color: #6272A4; } .fn { color: #50FA7B; } .str { color: #F1FA8C; } .num { color: var(--amber); }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border); padding: 48px 24px;
+    text-align: center;
+  }
+  .footer-logo { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; }
+  .footer-logo span { color: var(--green); }
+  footer p { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); line-height: 1.8; }
+  footer a { color: var(--green); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── SCROLL REVEAL ── */
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-inner" id="ticker"></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">DSE <span>Tracker</span></div>
+  <div class="nav-links">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#features">Features</a>
+    <a href="#data">Data</a>
+    <a href="#quickstart">Quick Start</a>
+  </div>
+  <a href="https://github.com/niaz86/DSE" class="nav-cta">GitHub ↗</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="badge"><span class="badge-dot"></span> AUTOMATED &nbsp;·&nbsp; DAILY &nbsp;·&nbsp; FREE</div>
+  <h1>DSE <span class="accent">Data</span><br>Scraper</h1>
+  <p class="hero-sub">Automatically scrapes every Dhaka Stock Exchange listed company after market close — financials, holdings, P/E, NAV, dividends — appended to a growing Excel workbook.</p>
+  <div class="hero-ctas">
+    <a href="https://github.com/niaz86/DSE" class="btn btn-primary">View on GitHub ↗</a>
+    <a href="https://github.com/niaz86/DSE/archive/refs/heads/master.zip" class="btn btn-outline">Download ZIP</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-cell"><span class="stat-num" data-target="400">0</span><span class="stat-label">Companies Tracked</span></div>
+  <div class="stat-cell"><span class="stat-num" data-target="14">0</span><span class="stat-label">Metrics Per Company</span></div>
+  <div class="stat-cell"><span class="stat-num" data-target="10">0</span><span class="stat-label">Parallel Threads</span></div>
+  <div class="stat-cell"><span class="stat-num">Mon–Fri</span><span class="stat-label">Auto-Update Schedule</span></div>
+</div>
+
+<!-- PIPELINE -->
+<section id="pipeline" class="reveal">
+  <p class="section-label">// how it works</p>
+  <h2>Daily pipeline</h2>
+  <div class="pipeline">
+    <div class="pipe-step"><span class="pipe-num">01 ─</span><div class="pipe-title">Discover</div><div class="pipe-desc">Fetches all trading codes from DSE categories A, B, G, N, Z in parallel</div></div>
+    <div class="pipe-step"><span class="pipe-num">02 ─</span><div class="pipe-title">Scrape</div><div class="pipe-desc">10 threads simultaneously pull company pages from dsebd.org</div></div>
+    <div class="pipe-step"><span class="pipe-num">03 ─</span><div class="pipe-title">Parse</div><div class="pipe-desc">Extracts price, P/E, EPS, NAV, dividends, shareholding from HTML</div></div>
+    <div class="pipe-step"><span class="pipe-num">04 ─</span><div class="pipe-title">Append</div><div class="pipe-desc">New dated row added to each company sheet in dse_companies.xlsx</div></div>
+    <div class="pipe-step"><span class="pipe-num">05 ─</span><div class="pipe-title">Commit</div><div class="pipe-desc">GitHub Actions pushes updated files back to this repository</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="reveal">
+  <p class="section-label">// features</p>
+  <h2>What's included</h2>
+  <div class="features-grid">
+    <div class="feature-card"><div class="feature-icon">⚡</div><div class="feature-title">Multithreaded Scraping</div><div class="feature-desc">10 concurrent threads cut full-market scrape time by 8–10× vs serial execution</div></div>
+    <div class="feature-card"><div class="feature-icon">📊</div><div class="feature-title">Time-Series Excel</div><div class="feature-desc">One sheet per company. Static header on top, new daily row appended at the bottom each run</div></div>
+    <div class="feature-card"><div class="feature-icon">🤖</div><div class="feature-title">Zero-Touch Automation</div><div class="feature-desc">GitHub Actions runs Mon–Fri at 18:30 BDT with no server or cron setup required</div></div>
+    <div class="feature-card"><div class="feature-icon">📈</div><div class="feature-title">Market Summary</div><div class="feature-desc">Aggregated sector-level view across all listed companies in dse_market_summary.xlsx</div></div>
+    <div class="feature-card"><div class="feature-icon">🔌</div><div class="feature-title">JSON Backup</div><div class="feature-desc">Every scrape also exports to dse_companies.json for programmatic access</div></div>
+    <div class="feature-card"><div class="feature-icon">🛠</div><div class="feature-title">No API Keys Needed</div><div class="feature-desc">Scrapes publicly available data from dsebd.org — clone, install, run</div></div>
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data" class="reveal">
+  <p class="section-label">// data collected</p>
+  <h2>15 fields, per company, per day</h2>
+  <p style="margin-top:16px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--muted); line-height:1.7;">
+    Static company info (name, sector, address, listing year) is written once to the top of each sheet.<br>
+    The table below shows the daily time-series columns appended on each run.
+  </p>
+  <div class="data-table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>Date</td><td>Scrape date (YYYY-MM-DD)</td></tr>
+        <tr><td>Opening Price</td><td>Price at market open in BDT</td></tr>
+        <tr><td>Market Cap (mn)</td><td>Market capitalisation in BDT millions</td></tr>
+        <tr><td>52W High / Low</td><td>52-week trading price range</td></tr>
+        <tr><td>Trailing P/E</td><td>Price-to-earnings ratio from latest unaudited data</td></tr>
+        <tr><td>EPS Basic</td><td>Latest interim earnings per share (continuing operations)</td></tr>
+        <tr><td>NAV Per Share</td><td>Net asset value from latest audited accounts</td></tr>
+        <tr><td>Cash Dividend</td><td>Most recent cash dividend declared</td></tr>
+        <tr><td>Bonus Dividend</td><td>Most recent bonus stock dividend</td></tr>
+        <tr><td>Paid-up Capital (mn)</td><td>Total paid-up capital in BDT millions</td></tr>
+        <tr><td>Authorized Capital (mn)</td><td>Total authorised capital in BDT millions</td></tr>
+        <tr><td>Sponsor/Dir %</td><td>Sponsor and director shareholding percentage</td></tr>
+        <tr><td>Institute %</td><td>Institutional shareholding percentage</td></tr>
+        <tr><td>Public %</td><td>Public shareholding percentage</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- QUICK START -->
+<section id="quickstart" class="reveal">
+  <p class="section-label">// quick start</p>
+  <h2>Up and running in 30 seconds</h2>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dot" style="background:#ff5f57"></div>
+      <div class="code-dot" style="background:#febc2e"></div>
+      <div class="code-dot" style="background:#28c840"></div>
+      <span class="code-filename">terminal</span>
+    </div>
+    <div class="code-body">
+<span class="cm"># Clone the repository</span>
+<span class="fn">git</span> clone https://github.com/niaz86/DSE.git && <span class="fn">cd</span> DSE
+
+<span class="cm"># Install dependencies</span>
+<span class="fn">pip</span> install -r requirements.txt
+
+<span class="cm"># Run the full market scrape</span>
+<span class="fn">python</span> script.py
+
+<span class="cm"># Or scrape a single company only</span>
+<span class="fn">python</span> dse_scraper_individual_company.py
+    </div>
+  </div>
+
+  <div style="margin-top:32px; padding:24px; background:var(--surface); border:1px solid var(--border); border-radius:8px;">
+    <p style="font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--green); margin-bottom:8px; letter-spacing:0.1em; text-transform:uppercase;">// configuration</p>
+    <table class="data-table" style="margin-top:0">
+      <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>MAX_WORKERS</td><td>10</td><td>Number of parallel scraping threads</td></tr>
+        <tr><td>REQUEST_DELAY</td><td>0.5s</td><td>Per-thread delay between requests</td></tr>
+        <tr><td>CATEGORIES</td><td>A,B,G,N,Z</td><td>DSE market categories to scrape</td></tr>
+        <tr><td>DSE_OUTPUT_EXCEL</td><td>env var</td><td>Override output path for Excel file</td></tr>
+        <tr><td>DSE_OUTPUT_JSON</td><td>env var</td><td>Override output path for JSON backup</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">DSE <span>Tracker</span></div>
+  <p>
+    Built for the Dhaka Stock Exchange &nbsp;·&nbsp;
+    Data sourced from <a href="https://www.dsebd.org">dsebd.org</a><br>
+    For personal research and educational use &nbsp;·&nbsp;
+    <a href="https://github.com/niaz86/DSE">github.com/niaz86/DSE</a>
+  </p>
+</footer>
+
+<script>
+  // Ticker
+  const stocks = [
+    ['BRAC BANK','▲ 2.3%',true],['GRAMEENPHONE','▼ 0.8%',false],['SQUARE PHARMA','▲ 1.1%',true],
+    ['DUTCH BANGLA','▲ 0.5%',true],['BEXIMCO','▼ 1.4%',false],['RENATA','▲ 3.2%',true],
+    ['ISLAMI BANK','▼ 0.3%',false],['OLYMPIC IND','▲ 0.9%',true],['LAFARGE','▼ 2.1%',false],
+    ['MARICO BD','▲ 1.7%',true],['SINGER BD','▲ 0.4%',true],['BATA SHOE','▼ 0.6%',false],
+    ['APEX FOODS','▲ 2.8%',true],['CITY BANK','▼ 0.2%',false],['TITAS GAS','▲ 0.7%',true],
+  ];
+  const ticker = document.getElementById('ticker');
+  const html = stocks.map(([n,c,up]) =>
+    `<span class="${up?'up':'down'}">${n} &nbsp;${c}</span>`
+  ).join('');
+  ticker.innerHTML = html + html;
+
+  // Count-up animation
+  document.querySelectorAll('[data-target]').forEach(el => {
+    const target = +el.dataset.target;
+    let cur = 0;
+    const step = Math.ceil(target / 40);
+    const t = setInterval(() => {
+      cur = Math.min(cur + step, target);
+      el.textContent = cur + '+';
+      if (cur >= target) clearInterval(t);
+    }, 35);
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver(entries =>
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.1 }
+  );
+  document.querySelectorAll('.reveal').forEach(r => observer.observe(r));
+</script>
+</body>
+</html>
