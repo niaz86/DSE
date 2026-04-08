@@ -17,7 +17,7 @@ COMPANY_URL   = BASE_URL + "/displayCompany.php"
 CATEGORIES    = ["A", "B", "G", "N", "Z"]
 OUTPUT_JSON   = os.environ.get("DSE_OUTPUT_JSON",  "dse_companies.json")
 OUTPUT_EXCEL  = os.environ.get("DSE_OUTPUT_EXCEL", "dse_companies.xlsx")
-REQUEST_DELAY = 0.5   # reduced — parallelism spreads load naturally
+REQUEST_DELAY = 1.5   # reduced — parallelism spreads load naturally
 MAX_WORKERS   = 10    # tune this up/down based on your connection & DSE tolerance
 
 HEADERS = {
