@@ -46,7 +46,7 @@ jobs:
         env:
           DSE_OUTPUT_JSON:  ${{ github.workspace }}/dse_companies.json
           DSE_OUTPUT_EXCEL: ${{ github.workspace }}/dse_companies.xlsx
-        run: python dse_scraper.py
+        run: python dse_scraper_individual_company.py
 
       # ── 5. Commit & push the updated files ───────────────────────────────────
       # Only runs if the scraper actually changed something.
