@@ -1,0 +1,60 @@
+name: DSE Daily Scrape
+
+on:
+  # Runs at 18:30 UTC = ~00:30 Bangladesh time (after DSE closes at 14:30 BDT)
+  # Adjust the cron if you want a different local time.
+  # Cron format: minute hour day-of-month month day-of-week
+  schedule:
+    - cron: "30 12 * * 1-5"   # Mon–Fri only (DSE is closed on weekends)
+
+  # Also lets you trigger a run manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    name: Scrape & commit DSE data
+    runs-on: ubuntu-latest
+
+    # Give the job write permission so it can push the updated files back
+    permissions:
+      contents: write
+
+    steps:
+      # ── 1. Check out the repo ────────────────────────────────────────────────
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch the full history so the commit step can push cleanly
+          fetch-depth: 1
+
+      # ── 2. Set up Python ─────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip            # cache dependencies between runs to save time
+
+      # ── 3. Install dependencies ──────────────────────────────────────────────
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 openpyxl lxml
+
+      # ── 4. Run the scraper ───────────────────────────────────────────────────
+      # Output paths are set via env vars so the files land in the repo root.
+      # The scraper appends today's row to the existing Excel file if it is
+      # already present (checked out from the repo above).
+      - name: Run DSE scraper
+        env:
+          DSE_OUTPUT_JSON:  ${{ github.workspace }}/dse_companies.json
+          DSE_OUTPUT_EXCEL: ${{ github.workspace }}/dse_companies.xlsx
+        run: python dse_scraper.py
+
+      # ── 5. Commit & push the updated files ───────────────────────────────────
+      # Only runs if the scraper actually changed something.
+      - name: Commit updated data files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dse_companies.xlsx dse_companies.json
+          # Exit 0 even if there is nothing new to commit (idempotent)
+          git diff --cached --quiet || git commit -m "chore: DSE data update $(date -u +'%Y-%m-%d')"
+          git push
