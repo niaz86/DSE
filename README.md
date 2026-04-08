@@ -1,8 +1,42 @@
 # 📈 DSE Data Scraper & Tracker
 
+[![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automated-green.svg)](https://github.com/features/actions)
+[![License](https://img.shields.io/badge/License-Educational-informational.svg)](https://github.com/niaz86/DSE)
+
 Automated daily scraper for the **Dhaka Stock Exchange (DSE)** that collects per-company financials, shareholding data, and market metrics — then appends them into a growing Excel workbook, one row per trading day.
 
 Data files are updated automatically every weekday via **GitHub Actions** and committed back to this repository, so the Excel files always contain the latest available figures.
+
+> **Perfect for:** Financial analysts, researchers, portfolio managers, and anyone tracking DSE-listed companies' performance over time.
+
+---
+
+## ⚡ Quick Start
+
+### 30-Second Setup
+
+```bash
+git clone https://github.com/niaz86/DSE.git
+cd DSE
+pip install -r requirements.txt
+python script.py
+```
+
+That's it! Excel files will be created/updated in your local directory.
+
+---
+
+## ✨ Features
+
+- ✅ **Automatic Daily Updates** — GitHub Actions runs Mon–Fri after market close
+- ✅ **Per-Company Tracking** — Individual Excel sheets for each DSE-listed company
+- ✅ **Rich Data Collection** — Price, P/E, EPS, NAV, dividends, shareholding breakdown
+- ✅ **Market-Wide Summary** — Aggregated metrics across all companies
+- ✅ **Parallel Scraping** — 10 concurrent threads for fast data collection
+- ✅ **Zero Configuration** — Works out of the box; no API keys or authentication needed
+- ✅ **JSON Backup** — Latest scrape also exported as JSON for programmatic access
+- ✅ **Timestamped** — Track when each scrape was last run
 
 ---
 
@@ -152,7 +186,60 @@ pip install -r requirements.txt
 
 ---
 
-## Notes
+## 🔧 Troubleshooting
+
+### Excel files not updating?
+- Check `last_run.txt` to see when the scraper last ran successfully
+- Verify your internet connection and that [dsebd.org](https://www.dsebd.org) is accessible
+- Run `python script.py` manually to check for error messages
+
+### GitHub Actions workflow not running?
+- Go to **Actions → DSE Daily Scrape** and check the workflow logs
+- Ensure the workflow file is enabled in repository settings
+- Manually trigger it: **Actions → DSE Daily Scrape → Run workflow**
+
+### ModuleNotFoundError?
+- Ensure you've run `pip install -r requirements.txt`
+- Try upgrading pip: `pip install --upgrade pip`
+- Consider using a virtual environment: `python -m venv venv && source venv/bin/activate`
+
+### Missing or empty data in Excel?
+- Some companies may not report all fields (e.g., EPS for newly listed companies)
+- DSE market may be closed (weekends/holidays)
+- The column may not exist on [dsebd.org](https://www.dsebd.org) for that company
+
+---
+
+## 📊 Use Cases
+
+- **Portfolio Tracking** — Monitor holdings' price movements and key metrics over time
+- **Sector Analysis** — Compare performance across different DSE sectors
+- **Technical Analysis** — Use historical price data for charting and trend analysis
+- **Fundamental Research** — Track P/E, NAV, dividend yields, and shareholding patterns
+- **Data Science Projects** — Feed DSE data into machine learning models
+
+---
+
+## Contributing
+
+Contributions are welcome! Here's how to help:
+
+1. **Fork** the repository
+2. **Create a feature branch** (`git checkout -b feature/your-feature`)
+3. **Commit your changes** (`git commit -m 'Add your feature'`)
+4. **Push to the branch** (`git push origin feature/your-feature`)
+5. **Open a Pull Request** with a clear description
+
+### Ideas for Contributions
+- Add support for technical indicators (MA, RSI, MACD, etc.)
+- Improve scraping performance (caching, session pooling)
+- Add data visualization/dashboard features
+- Extend to other stock exchanges
+- Improve error handling and resilience
+
+---
+
+## 📝 Notes
 
 - This tool scrapes publicly available data from [dsebd.org](https://www.dsebd.org). Please use responsibly and avoid running at very high concurrency.
 - DSE is closed on weekends and Bangladeshi public holidays. The workflow runs Mon–Fri but will produce an empty diff on holidays — nothing will be committed.
@@ -160,6 +247,6 @@ pip install -r requirements.txt
 
 ---
 
-## License
+## 📄 License
 
 This project is for personal research and educational use. Data sourced from the Dhaka Stock Exchange website.
