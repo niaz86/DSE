@@ -1,4 +1,4 @@
-name: DSE Daily Scrape
+name: DSE Daily Scrape Individual 
 
 on:
   # Runs at 18:30 UTC = ~00:30 Bangladesh time (after DSE closes at 14:30 BDT)
