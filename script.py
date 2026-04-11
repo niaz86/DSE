@@ -290,6 +290,9 @@ def json_is_duplicate(stock_list, new_row):
     if not stock_list:
         return False
     last = stock_list[-1]
+    # Never duplicate if date is different
+    if last.get("DATE") != new_row.get("DATE"):
+        return False
     keys = ["GROUP","LTP*","HIGH","LOW","CLOSEP*","YCP*","CHANGE",
             "TRADE","VALUE (mn)","VOLUME"]
     return all(str(last.get(k,"")) == str(new_row.get(k,"")) for k in keys)
