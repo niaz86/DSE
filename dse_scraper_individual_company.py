@@ -53,7 +53,7 @@ DAILY_COLUMNS = [
 ]
 
 
-# ── Scraping helpers ──────────────────────────────────────────────────────────
+# ── Scraping helpers (unchanged) ──────────────────────────────────────────────
 def fetch_page(trading_code):
     resp = requests.get(COMPANY_URL, params={"name": trading_code}, headers=HEADERS, timeout=15)
     resp.raise_for_status()
@@ -239,7 +239,7 @@ def scrape_company(trading_code):
     }
 
 
-# ── Excel writer (runs single-threaded after all scraping) ────────────────────
+# ── Excel writer (unchanged — runs single-threaded after all scraping) ─────────
 def safe_sheet_name(code):
     for ch in [":", "\\", "/", "?", "*", "[", "]"]:
         code = code.replace(ch, "_")
@@ -345,7 +345,7 @@ def discover_all_codes():
 def scrape_worker(args):
     """
     Wraps scrape_company for use in the thread pool.
-    Returns (index, total, code, data_or_None, error_or_None).
+    Returns (index, code, data_or_None, error_or_None).
     The small sleep staggers requests so we don't hammer the server
     with all MAX_WORKERS threads firing simultaneously at t=0.
     """
@@ -367,6 +367,7 @@ def run_daily_scrape():
     total     = len(all_codes)
 
     store   = {}
+    scraped = []           # ordered list for Excel (filled after pool finishes)
     lock    = threading.Lock()
     success = fail = 0
 
@@ -388,37 +389,15 @@ def run_daily_scrape():
                     store[code] = data
                 print(f"[{index}/{total_}] {code} — OK")
 
-    print(f"\nScraping complete. {success} succeeded, {fail} failed.")
-
     # Preserve the original discovery order for stable Excel sheet ordering
     scraped = [store[code] for code in all_codes if code in store]
 
-    # ── Save JSON — merge with existing so partial runs don't lose data ───────
-    if store:
-        existing_json = {}
-        if os.path.exists(OUTPUT_JSON):
-            try:
-                with open(OUTPUT_JSON, "r", encoding="utf-8") as f:
-                    existing_json = json.load(f)
-                print(f"Loaded existing JSON with {len(existing_json)} entries.")
-            except (json.JSONDecodeError, OSError) as e:
-                print(f"Warning: could not read existing JSON ({e}). Starting fresh.")
+    # ── Save outputs (single-threaded) ────────────────────────────────────────
+    with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
+        json.dump(store, f, indent=2, ensure_ascii=False)
+    print(f"\nJSON backup saved: '{OUTPUT_JSON}'.")
 
-        # New data overwrites existing entries for the same code
-        existing_json.update(store)
-
-        with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-            json.dump(existing_json, f, indent=2, ensure_ascii=False)
-        print(f"JSON saved: '{OUTPUT_JSON}' ({len(existing_json)} total companies).")
-    else:
-        print("WARNING: No data scraped — skipping JSON write to preserve existing file.")
-
-    # ── Save Excel ────────────────────────────────────────────────────────────
-    if scraped:
-        update_excel(OUTPUT_EXCEL, scraped)
-    else:
-        print("WARNING: No data scraped — skipping Excel write.")
-
+    update_excel(OUTPUT_EXCEL, scraped)
     print(f"\nDone. {success} succeeded, {fail} failed.")
 
 
