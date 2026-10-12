@@ -1,0 +1,61 @@
+name: DSE Daily Scrape Individual
+
+on:
+  # DSE trades Sun-Thu (Fri/Sat are the weekend in Bangladesh). The old
+  # "1-5" (Mon-Fri) ran on Friday, a closed day, and skipped Sunday.
+  # Cron is UTC: 10:00 UTC = 16:00 BDT, after the 14:30 BDT close.
+  # Day-of-week: 0 = Sunday ... 4 = Thursday.
+  schedule:
+    - cron: "0 10 * * 0-4"
+
+  workflow_dispatch:
+
+# Never let two runs push at the same time
+concurrency:
+  group: dse-individual
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    name: Scrape & commit DSE data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 openpyxl lxml
+
+      # The scraper now exits non-zero when discovery fails or too many
+      # companies fail, so this step turns the job RED instead of
+      # silently committing an empty JSON.
+      - name: Run DSE scraper
+        env:
+          DSE_OUTPUT_JSON:  ${{ github.workspace }}/dse_companies.json
+          DSE_OUTPUT_EXCEL: ${{ github.workspace }}/dse_companies.xlsx
+        run: python dse_scraper_individual_company.py
+
+      - name: Commit updated data files
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dse_companies.xlsx dse_companies.json
+          if git diff --cached --quiet; then
+            echo "Nothing new to commit."
+          else
+            git commit -m "chore: DSE data update $(date -u +'%Y-%m-%d')"
+            # another workflow may have pushed in the meantime
+            git pull --rebase --autostash origin "${{ github.ref_name }}"
+            git push
+          fi
