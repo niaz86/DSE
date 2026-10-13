@@ -326,6 +326,15 @@ def run_daily_scrape():
 
     scraped = [store[code] for code in all_codes if code in store]
 
+    # Field coverage: shows exactly which columns come out blank, and for whom
+    print("\n=== FIELD COVERAGE (filled / scraped) ===")
+    for _, key in DAILY_COLUMNS[1:] + [("Sector", "sector"), ("Listing year", "listing_year"),
+                                       ("Face value", "face_par_value")]:
+        missing = [d["trading_code"] for d in scraped if not str(d.get(key, "")).strip()]
+        eg = f"  e.g. {', '.join(missing[:4])}" if missing and len(missing) < len(scraped) else ""
+        print(f"  {key:<22} {len(scraped) - len(missing):>4}/{len(scraped)}{eg}")
+    print()
+
     tmp = OUTPUT_JSON + ".tmp"            # write atomically: never leave a half file
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(store, f, indent=2, ensure_ascii=False)
