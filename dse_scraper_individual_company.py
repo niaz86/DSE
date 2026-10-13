@@ -3,8 +3,10 @@ import json
 import time
 import os
 import sys
+import re
 import threading
 from datetime import datetime, timezone, timedelta
+from urllib.parse import quote
 from bs4 import BeautifulSoup
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment
@@ -15,9 +17,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 BASE_URL      = "https://www.dse.com.bd"
 # Code discovery now uses the JSON price feed (same one script.py uses).
 PRICES_API    = BASE_URL + "/api/live/prices"
-# Company detail page/API on the NEW site. The old dsebd.org/displayCompany.php
-# is gone (410). Fill this in from DevTools (open a company, Network -> Fetch/XHR).
-COMPANY_URL   = None
+# Company page on the new site, e.g. https://www.dse.com.bd/company/ACI
+# (server-rendered HTML, so plain requests + BeautifulSoup works).
+COMPANY_URL   = BASE_URL + "/company/{code}"
 MIN_SUCCESS_RATIO = 0.8   # below this share of companies OK, abort and save nothing
 BDT           = timezone(timedelta(hours=6))   # runners are UTC; DSE is Bangladesh time
 def today_bdt():
@@ -25,8 +27,8 @@ def today_bdt():
 CATEGORIES    = ["A", "B", "G", "N", "Z"]
 OUTPUT_JSON   = os.environ.get("DSE_OUTPUT_JSON",  "dse_companies.json")
 OUTPUT_EXCEL  = os.environ.get("DSE_OUTPUT_EXCEL", "dse_companies.xlsx")
-REQUEST_DELAY = 1.5   # reduced — parallelism spreads load naturally
-MAX_WORKERS   = 10    # tune this up/down based on your connection & DSE tolerance
+REQUEST_DELAY = 1.0   # seconds each worker waits before a request
+MAX_WORKERS   = 4     # ~3 req/s overall; be gentle with the exchange's servers
 
 HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -62,187 +64,127 @@ DAILY_COLUMNS = [
 
 
 # ── Scraping helpers ──────────────────────────────────────────────────────────
+PRICE_META = {}   # code -> {"sector":..., "category":..., "open":...} from the price feed
+
+LABELS = [
+    "Market cap", "Free float market cap", "NAV per share", "P/E (audited)",
+    "Day's value", "Day's volume", "Day's trades", "Opening price",
+    "Adjusted Opening Price", "Last Update", "Day's range", "52-week range",
+    "Basics", "Listing year", "Authorized Capital (mn)", "Paid-up capital",
+    "Face value", "Total outstanding securities", "Market Lot",
+    "Shareholding pattern", "Shareholding percentages as reported",
+    "Corporate & contact", "Present Operational Status",
+    "Head Office / Registered Office", "Factory Address", "Contact Phone", "Fax",
+    "E-mail", "Company Secretary Name", "Company Secretary Cell No.",
+    "Company Secretary Telephone No.", "Company Secretary E-mail", "Website",
+    "Loan status", "Present Loan Status", "Credit rating", "Last AGM",
+    "Year-end", "Details of Financial Statement", "Price Sensitive Information",
+    "(i) Dynamic information",
+]
+HOLDING_LABELS = ["Sponsor / Director", "Government", "Institution", "Foreign", "Public"]
+
 def fetch_page(trading_code):
-    resp = requests.get(COMPANY_URL, params={"name": trading_code}, headers=HEADERS, timeout=15)
-    resp.raise_for_status()
-    return BeautifulSoup(resp.text, "html.parser")
+    url = COMPANY_URL.format(code=quote(trading_code, safe="()-"))
+    last = None
+    for attempt in range(3):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=20)
+            if resp.status_code >= 500:
+                raise requests.HTTPError(f"{resp.status_code} from server")
+            resp.raise_for_status()
+            return BeautifulSoup(resp.text, "html.parser")
+        except (requests.Timeout, requests.ConnectionError, requests.HTTPError) as e:
+            last = e
+            if isinstance(e, requests.HTTPError) and e.response is not None \
+                    and e.response.status_code < 500:
+                raise                      # 404/410 etc: no point retrying
+            time.sleep(2 ** attempt)
+    raise last
 
-def find_h2(soup, text):
-    for h2 in soup.find_all("h2"):
-        if text in h2.get_text():
-            return h2
-    return None
+def split_by_labels(text, labels):
+    """Return {label: text up to the next label}, first occurrence wins.
+    Works on flattened text, so it doesn't matter how the HTML nests the nodes."""
+    hits = []
+    for lab in labels:
+        for m in re.finditer(r"(?<!\w)" + re.escape(lab) + r"(?!\w)", text):   # case-sensitive
+            hits.append((m.start(), m.end(), lab))
+    # drop hits that sit inside a longer label (e.g. "E-mail" inside "Company Secretary E-mail")
+    hits = [h for h in hits
+            if not any(o is not h and o[0] <= h[0] and h[1] <= o[1] and (o[1] - o[0]) > (h[1] - h[0])
+                       for o in hits)]
+    hits.sort()
+    out = {}
+    for i, (st, en, lab) in enumerate(hits):
+        nxt = hits[i + 1][0] if i + 1 < len(hits) else len(text)
+        out.setdefault(lab, text[en:nxt].strip(" :·-"))
+    return out
 
-def find_by_label(soup, label):
-    for th in soup.find_all("th"):
-        if label.lower() in th.get_text(strip=True).lower():
-            td = th.find_next_sibling("td")
-            if td:
-                return td.get_text(" ", strip=True)
-    for td in soup.find_all("td"):
-        if td.get_text(strip=True).lower() == label.lower():
-            sibling = td.find_next_sibling("td")
-            if sibling:
-                return sibling.get_text(" ", strip=True)
-    return ""
+def clean_num(v):
+    """'BDT 878.32 mn' -> '878.32'; '—' -> ''."""
+    v = re.sub(r"\bBDT\b|\bmn\b", "", v or "").strip()
+    return "" if v in ("—", "-", "–") else v
 
-def get_company_name(soup):
-    header = soup.find("h2", class_="BodyHead")
-    if not header:
-        return ""
-    full_text = header.get_text(" ", strip=True)
-    return full_text.split("Company Name:")[-1].strip() if "Company Name:" in full_text else full_text
+def numbers(v):
+    return re.findall(r"\d[\d,]*\.?\d*", (v or "").replace("BDT", " "))
 
-def get_market_info(soup):
-    week52_range = find_by_label(soup, "52 Weeks")
-    week52_high = week52_low = ""
-    if " - " in week52_range:
-        parts = week52_range.split(" - ")
-        week52_low, week52_high = parts[0].strip(), parts[1].strip()
-    return {
-        "opening_price": find_by_label(soup, "Opening Price"),
-        "market_cap_mn": find_by_label(soup, "Market Capitalization"),
-        "week52_high":   week52_high,
-        "week52_low":    week52_low,
-    }
-
-def get_basic_info(soup):
-    return {
-        "authorized_capital_mn": find_by_label(soup, "Authorized Capital (mn)"),
-        "paid_up_capital_mn":    find_by_label(soup, "Paid-up Capital (mn)"),
-        "face_par_value":        find_by_label(soup, "Face/par Value"),
-        "sector":                find_by_label(soup, "Sector"),
-        "debut_trading_date":    find_by_label(soup, "Debut Trading Date"),
-    }
-
-def get_latest_shareholding(soup):
-    result = {}
-    rows = [td.parent for td in soup.find_all("td") if "Share Holding Percentage" in td.get_text()]
-    if rows:
-        inner_cells = rows[-1].find_all("td", style=lambda v: v and "border:hidden" in v)
-        for label, cell in zip(["sponsor_director", "govt", "institute", "foreign", "public"], inner_cells):
-            text = cell.get_text(" ", strip=True)
-            result[label] = text.split(":")[-1].strip() if ":" in text else text
-    return result
-
-def get_latest_eps(soup):
-    header = find_h2(soup, "Interim Financial Performance")
-    if not header:
-        return ""
-    table = header.find_next("table")
-    if not table:
-        return ""
-    in_continuing = False
-    for row in table.find_all("tr"):
-        cells = row.find_all(["th", "td"])
-        if not cells:
-            continue
-        first = cells[0].get_text(strip=True)
-        if "continuing" in first.lower() and "EPS" in first:
-            in_continuing = True
-            continue
-        if in_continuing and first == "Basic":
-            for v in reversed([c.get_text(strip=True) for c in cells[1:-1]]):
-                if v and v != "-":
-                    return v
-            break
-    return ""
-
-def get_latest_nav(soup):
-    header = find_h2(soup, "Financial Performance as per Audited")
-    if not header:
-        return ""
-    table = header.find_next("table")
-    if not table:
-        return ""
-    data_rows = table.find_all("tr", class_=lambda c: c and "shrink" in c)
-    if not data_rows:
-        return ""
-    cells = data_rows[-1].find_all(["th", "td"])
-    return cells[7].get_text(strip=True) if len(cells) > 7 else ""
-
-def get_dividends(soup):
-    return {
-        "cash_dividend":        find_by_label(soup, "Cash Dividend"),
-        "bonus_stock_dividend": find_by_label(soup, "Bonus Issue (Stock Dividend)"),
-    }
-
-def get_trailing_pe(soup):
-    header = find_h2(soup, "P/E Ratio based on latest Un-audited")
-    if not header:
-        header = find_h2(soup, "latest Un-audited Financial Statements")
-    if not header:
-        return ""
-    table = header.find_next("table")
-    if not table:
-        return ""
-    for row in table.find_all("tr"):
-        cells = row.find_all(["th", "td"])
-        if cells and "Trailing P/E" in cells[0].get_text():
-            for v in reversed([c.get_text(strip=True) for c in cells[1:]]):
-                if v and v != "-":
-                    return v
-    return ""
-
-def get_other_info(soup):
-    return {
-        "listing_year":    find_by_label(soup, "Listing Year"),
-        "market_category": find_by_label(soup, "Market Category"),
-    }
-
-def get_address(soup):
-    head_office = contact_phone = email = web_address = ""
-    for td in soup.find_all("td"):
-        text = td.get_text(strip=True)
-        if text == "Head Office":
-            s = td.find_next_sibling("td")
-            if s: head_office = s.get_text(strip=True)
-        elif text == "Contact Phone":
-            s = td.find_next_sibling("td")
-            if s: contact_phone = s.get_text(strip=True)
-        elif text == "Web Address":
-            s = td.find_next_sibling("td")
-            if s: web_address = s.get_text(strip=True)
-    for td in soup.find_all("td"):
-        if td.get_text(strip=True) == "E-mail":
-            s = td.find_next_sibling("td")
-            if s:
-                email = s.get_text(strip=True)
-                break
-    return {"head_office": head_office, "contact_phone": contact_phone,
-            "email": email, "web_address": web_address}
+def page_text(soup):
+    for t in soup(["script", "style", "noscript"]):
+        t.decompose()
+    anchor = soup.find(string=lambda s: s and "Back to market" in s)
+    h1 = anchor.find_next("h1") if anchor else soup.find("h1")
+    name = h1.get_text(" ", strip=True) if h1 else ""
+    flat = re.sub(r"\s+", " ", soup.get_text(" ", strip=True))
+    i = flat.find("Back to market")           # drop the live ticker / nav above it
+    return name, (flat[i:] if i >= 0 else flat)
 
 def scrape_company(trading_code):
-    soup       = fetch_page(trading_code)
-    market     = get_market_info(soup)
-    basic      = get_basic_info(soup)
-    other      = get_other_info(soup)
-    dividends  = get_dividends(soup)
-    holding    = get_latest_shareholding(soup)
+    soup = fetch_page(trading_code)
+    name, flat = page_text(soup)
+    vals = split_by_labels(flat, LABELS)
+    if not name or len(vals) < 5:
+        raise ValueError(f"unrecognised page layout (name={name!r}, labels found={len(vals)}); "
+                         f"text starts: {flat[:200]!r}")
+
+    rng = numbers(vals.get("52-week range"))          # [current, low, high]
+    week52_low, week52_high = (rng[1], rng[2]) if len(rng) >= 3 else ("", "")
+
+    hold = split_by_labels(vals.get("Shareholding pattern", ""), HOLDING_LABELS)
+    def latest_pct(label):                             # last column = most recent date
+        p = re.findall(r"(\d+(?:\.\d+)?)\s*%", hold.get(label, ""))
+        return p[-1] if p else ""
+
+    debut = re.search(r"Debut\s*·\s*(\d{1,2}[-/ ][A-Za-z0-9]+[-/ ]\d{2,4}|[A-Za-z]{3,9} \d{1,2},? \d{4})", flat)
+    meta = PRICE_META.get(trading_code, {})
 
     return {
         "trading_code":          trading_code,
-        "company_name":          get_company_name(soup),
-        "sector":                basic["sector"],
-        "face_par_value":        basic["face_par_value"],
-        "debut_trading_date":    basic["debut_trading_date"],
-        "listing_year":          other["listing_year"],
-        "market_category":       other["market_category"],
-        "address":               get_address(soup),
-        "authorized_capital_mn": basic["authorized_capital_mn"],
-        "paid_up_capital_mn":    basic["paid_up_capital_mn"],
-        "nav_per_share":         get_latest_nav(soup),
-        "latest_eps_basic":      get_latest_eps(soup),
-        "cash_dividend":         dividends["cash_dividend"],
-        "bonus_stock_dividend":  dividends["bonus_stock_dividend"],
-        "sponsor_director":      holding.get("sponsor_director", ""),
-        "institute":             holding.get("institute", ""),
-        "public":                holding.get("public", ""),
-        "week52_high":           market["week52_high"],
-        "week52_low":            market["week52_low"],
-        "trailing_pe":           get_trailing_pe(soup),
-        "opening_price":         market["opening_price"],
-        "market_cap_mn":         market["market_cap_mn"],
+        "company_name":          name,
+        "sector":                meta.get("sector", ""),
+        "face_par_value":        clean_num(vals.get("Face value")),
+        "debut_trading_date":    debut.group(1) if debut else "",
+        "listing_year":          clean_num(vals.get("Listing year")),
+        "market_category":       meta.get("category", ""),
+        "address": {
+            "head_office":   vals.get("Head Office / Registered Office", ""),
+            "contact_phone": vals.get("Contact Phone", ""),
+            "email":         vals.get("E-mail", ""),
+            "web_address":   vals.get("Website", ""),
+        },
+        "authorized_capital_mn": clean_num(vals.get("Authorized Capital (mn)")),
+        "paid_up_capital_mn":    clean_num(vals.get("Paid-up capital")),
+        "nav_per_share":         clean_num(vals.get("NAV per share")),
+        # Not on the overview page (Financials / Corporate actions tabs): left blank.
+        "latest_eps_basic":      "",
+        "cash_dividend":         "",
+        "bonus_stock_dividend":  "",
+        "sponsor_director":      latest_pct("Sponsor / Director"),
+        "institute":             latest_pct("Institution"),
+        "public":                latest_pct("Public"),
+        "week52_high":           week52_high,
+        "week52_low":            week52_low,
+        "trailing_pe":           "",   # page only shows "P/E (audited)", a different measure
+        "opening_price":         clean_num(vals.get("Opening price")) or str(meta.get("open", "")),
+        "market_cap_mn":         clean_num(vals.get("Market cap")),
         "last_updated":          today_bdt(),
     }
 
@@ -321,12 +263,17 @@ def discover_all_codes():
     payload = resp.json()
     cols, rows = payload["cols"], payload["rows"]
     ci, gi = cols.index("code"), cols.index("category")
+    si = cols.index("sector") if "sector" in cols else None
+    oi = cols.index("open") if "open" in cols else None
     seen, unique = set(), []
     for r in rows:
         code = str(r[ci]).strip()
         if code and str(r[gi]).upper() in CATEGORIES and code not in seen:
             seen.add(code)
             unique.append(code)
+            PRICE_META[code] = {"category": str(r[gi]).upper(),
+                                "sector": str(r[si]) if si is not None else "",
+                                "open": r[oi] if oi is not None else ""}
     print(f"Total unique trading codes discovered: {len(unique)}\n")
     return unique
 
@@ -346,10 +293,6 @@ def scrape_worker(args):
 def run_daily_scrape():
     print(f"=== DSE Daily Scrape — {today_bdt()} ===\n")
     print(f"Thread pool size: {MAX_WORKERS}\n")
-
-    if not COMPANY_URL:
-        sys.exit("COMPANY_URL is not configured for the new site yet. Nothing was "
-                 "fetched or saved.")
 
     all_codes = discover_all_codes()
     total     = len(all_codes)
