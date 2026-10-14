@@ -20,6 +20,8 @@ PRICES_API    = BASE_URL + "/api/live/prices"
 # Company page on the new site, e.g. https://www.dse.com.bd/company/ACI
 # (server-rendered HTML, so plain requests + BeautifulSoup works).
 COMPANY_URL   = BASE_URL + "/company/{code}"
+# "P/E at a glance": one server-rendered table for ALL securities (has Trailing P/E)
+PE_URL        = BASE_URL + "/pe"
 MIN_SUCCESS_RATIO = 0.8   # below this share of companies OK, abort and save nothing
 BDT           = timezone(timedelta(hours=6))   # runners are UTC; DSE is Bangladesh time
 def today_bdt():
@@ -100,6 +102,30 @@ def fetch_page(trading_code):
                 raise                      # 404/410 etc: no point retrying
             time.sleep(2 ** attempt)
     raise last
+
+PE_MAP = {}   # code -> Trailing P/E string ("" when n/a)
+
+def load_pe_table():
+    """One request fills Trailing P/E for every security. Failure is non-fatal."""
+    try:
+        resp = requests.get(PE_URL, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for table in soup.find_all("table"):
+            head = [th.get_text(" ", strip=True) for th in table.find_all("th")]
+            if "Trailing P/E" not in head or "Trade Code" not in head:
+                continue
+            ci, vi = head.index("Trade Code"), head.index("Trailing P/E")
+            for tr in table.find_all("tr"):
+                tds = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
+                if len(tds) > max(ci, vi):
+                    v = tds[vi].strip()
+                    PE_MAP[tds[ci].strip()] = "" if v.lower() in ("n/a", "-", "") else v
+            break
+        print(f"Trailing P/E table loaded: {len(PE_MAP)} securities, "
+              f"{sum(1 for v in PE_MAP.values() if v)} with a value\n")
+    except Exception as e:                       # keep the run alive; column stays blank
+        print(f"WARNING: could not load {PE_URL}: {e}\n")
 
 def split_by_labels(text, labels):
     """Return {label: text up to the next label}, first occurrence wins.
@@ -182,7 +208,7 @@ def scrape_company(trading_code):
         "public":                latest_pct("Public"),
         "week52_high":           week52_high,
         "week52_low":            week52_low,
-        "trailing_pe":           "",   # page only shows "P/E (audited)", a different measure
+        "trailing_pe":           PE_MAP.get(trading_code, ""),
         "opening_price":         clean_num(vals.get("Opening price")) or str(meta.get("open", "")),
         "market_cap_mn":         clean_num(vals.get("Market cap")),
         "last_updated":          today_bdt(),
@@ -295,6 +321,7 @@ def run_daily_scrape():
     print(f"Thread pool size: {MAX_WORKERS}\n")
 
     all_codes = discover_all_codes()
+    load_pe_table()
     total     = len(all_codes)
     if total == 0:
         sys.exit("No trading codes discovered - aborting, existing files untouched.")
