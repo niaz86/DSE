@@ -22,6 +22,10 @@ PRICES_API    = BASE_URL + "/api/live/prices"
 COMPANY_URL   = BASE_URL + "/company/{code}"
 # "P/E at a glance": one server-rendered table for ALL securities (has Trailing P/E)
 PE_URL        = BASE_URL + "/pe"
+# Dividend declarations are only published as text on the home-page notice board
+# (last few days). We accumulate them in a small state file so history builds up.
+HOME_URL      = BASE_URL + "/"
+DIVIDEND_JSON = os.environ.get("DSE_DIVIDEND_JSON", "dse_dividends.json")
 MIN_SUCCESS_RATIO = 0.8   # below this share of companies OK, abort and save nothing
 BDT           = timezone(timedelta(hours=6))   # runners are UTC; DSE is Bangladesh time
 def today_bdt():
@@ -103,7 +107,21 @@ def fetch_page(trading_code):
             time.sleep(2 ** attempt)
     raise last
 
-PE_MAP = {}   # code -> Trailing P/E string ("" when n/a)
+from decimal import Decimal
+
+def _num(v):
+    try:
+        return float(str(v).replace(",", ""))
+    except (ValueError, TypeError):
+        return None
+
+def _plain(x, nd=4):
+    if x == 0:
+        return "0"
+    return format(Decimal(str(round(x, nd))).normalize(), "f")
+
+PE_MAP = {}    # code -> Trailing P/E string ("" when n/a)
+EPS_MAP = {}   # code -> trailing EPS derived as Close / Trailing P/E
 
 def load_pe_table():
     """One request fills Trailing P/E for every security. Failure is non-fatal."""
@@ -116,16 +134,86 @@ def load_pe_table():
             if "Trailing P/E" not in head or "Trade Code" not in head:
                 continue
             ci, vi = head.index("Trade Code"), head.index("Trailing P/E")
+            pi = head.index("Close Price") if "Close Price" in head else None
             for tr in table.find_all("tr"):
                 tds = [td.get_text(" ", strip=True) for td in tr.find_all("td")]
                 if len(tds) > max(ci, vi):
-                    v = tds[vi].strip()
-                    PE_MAP[tds[ci].strip()] = "" if v.lower() in ("n/a", "-", "") else v
+                    code, v = tds[ci].strip(), tds[vi].strip()
+                    PE_MAP[code] = "" if v.lower() in ("n/a", "-", "") else v
+                    pe, px = _num(v), (_num(tds[pi]) if pi is not None and len(tds) > pi else None)
+                    if pe and px and pe > 0 and px > 0:        # DSE: P/E = price / trailing EPS
+                        EPS_MAP[code] = _plain(px / pe, 2)
             break
         print(f"Trailing P/E table loaded: {len(PE_MAP)} securities, "
               f"{sum(1 for v in PE_MAP.values() if v)} with a value\n")
     except Exception as e:                       # keep the run alive; column stays blank
         print(f"WARNING: could not load {PE_URL}: {e}\n")
+
+DIV_STATE = {}   # code -> {"cash_dividend","bonus_stock_dividend","eps_annual","declared"}
+
+def load_dividend_state():
+    try:
+        with open(DIVIDEND_JSON, encoding="utf-8") as f:
+            DIV_STATE.update(json.load(f))
+    except (FileNotFoundError, ValueError):
+        pass
+    print(f"Dividend state: {len(DIV_STATE)} companies known")
+
+MONTHS = {m: i for i, m in enumerate(
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
+
+def parse_notices(flat):
+    """Pull dividend declarations (+ the EPS in their continuation notice) out of the
+    home-page notice board text. Returns {code: {...}} keeping the newest per code."""
+    hdr = list(re.finditer(r"(\d{1,2}) ([A-Z][a-z]{2}) (20\d\d) · \d{2}:\d{2}", flat))
+    out = {}
+    for i, m in enumerate(hdr):
+        body = flat[m.end(): hdr[i + 1].start() if i + 1 < len(hdr) else len(flat)]
+        head = re.match(r"\s*([A-Z0-9][A-Z0-9&()\-]*): Dividend Declaration", body)
+        if not head:
+            continue
+        code = head.group(1)
+        date = f"{m.group(3)}-{MONTHS.get(m.group(2), 0):02d}-{int(m.group(1)):02d}"
+        rec = out.setdefault(code, {"declared": date})
+        cash = re.search(r"(\d+(?:\.\d+)?)\s*%\s*Cash Dividend", body, re.I)
+        stock = re.search(r"(\d+(?:\.\d+)?)\s*%\s*(?:Stock|Bonus)(?:\s+(?:Dividend|Share|Shares))?", body, re.I)
+        if cash:
+            rec["cash_dividend"] = cash.group(1) + "%"
+        if stock:
+            rec["bonus_stock_dividend"] = stock.group(1) + "%"
+        if re.search(r"recommended\s+No\s+dividend|No\s+dividend\s+has", body, re.I):
+            rec.setdefault("cash_dividend", "0%")
+            rec.setdefault("bonus_stock_dividend", "0%")
+        eps = re.search(r"EPS of Tk\.\s*(\()?\s*(-?[\d,]+\.?\d*)\s*\)?", body)
+        if eps:
+            v = eps.group(2).replace(",", "")
+            rec["eps_annual"] = ("-" + v) if eps.group(1) else v
+    return out
+
+def update_dividends_from_notices():
+    """Fetch the notice board, merge new declarations into DIV_STATE, save the file."""
+    try:
+        resp = requests.get(HOME_URL, headers=HEADERS, timeout=30)
+        resp.raise_for_status()
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for t in soup(["script", "style", "noscript"]):
+            t.decompose()
+        found = parse_notices(re.sub(r"\s+", " ", soup.get_text(" ", strip=True)))
+        new = 0
+        for code, rec in found.items():
+            old = DIV_STATE.get(code, {})
+            if rec["declared"] >= old.get("declared", ""):
+                merged = {**old, **rec}
+                if merged != old:
+                    new += 1
+                DIV_STATE[code] = merged
+        tmp = DIVIDEND_JSON + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(DIV_STATE, f, indent=2, ensure_ascii=False, sort_keys=True)
+        os.replace(tmp, DIVIDEND_JSON)
+        print(f"Notice board: {len(found)} dividend notices, {new} new/updated\n")
+    except Exception as e:
+        print(f"WARNING: notice board not read: {e}\n")
 
 def split_by_labels(text, labels):
     """Return {label: text up to the next label}, first occurrence wins.
@@ -200,9 +288,11 @@ def scrape_company(trading_code):
         "paid_up_capital_mn":    clean_num(vals.get("Paid-up capital")),
         "nav_per_share":         clean_num(vals.get("NAV per share")),
         # Not on the overview page (Financials / Corporate actions tabs): left blank.
-        "latest_eps_basic":      "",
-        "cash_dividend":         "",
-        "bonus_stock_dividend":  "",
+        # trailing EPS derived from DSE's own P/E (price / EPS); falls back to the last
+        # annual EPS seen in a dividend notice. Blank when neither exists.
+        "latest_eps_basic":      EPS_MAP.get(trading_code) or DIV_STATE.get(trading_code, {}).get("eps_annual", ""),
+        "cash_dividend":         DIV_STATE.get(trading_code, {}).get("cash_dividend", ""),
+        "bonus_stock_dividend":  DIV_STATE.get(trading_code, {}).get("bonus_stock_dividend", ""),
         "sponsor_director":      latest_pct("Sponsor / Director"),
         "institute":             latest_pct("Institution"),
         "public":                latest_pct("Public"),
@@ -321,6 +411,8 @@ def run_daily_scrape():
     print(f"Thread pool size: {MAX_WORKERS}\n")
 
     all_codes = discover_all_codes()
+    load_dividend_state()
+    update_dividends_from_notices()
     load_pe_table()
     total     = len(all_codes)
     if total == 0:
