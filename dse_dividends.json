@@ -1,7 +1,28 @@
 {
+  "DULAMIACOT": {
+    "cash_dividend": "1%",
+    "declared": "2026-10-19",
+    "eps_annual": "0.20"
+  },
+  "MATINSPINN": {
+    "bonus_stock_dividend": "10%",
+    "declared": "2026-10-19",
+    "eps_annual": "6.36"
+  },
+  "QUASEMIND": {
+    "bonus_stock_dividend": "8%",
+    "declared": "2026-10-19",
+    "eps_annual": "1.07"
+  },
   "RENATA": {
     "cash_dividend": "55%",
     "declared": "2026-10-18",
     "eps_annual": "31.76"
+  },
+  "SHARPIND": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-19",
+    "eps_annual": "-2.39"
   }
 }
