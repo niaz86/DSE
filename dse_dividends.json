@@ -1,4 +1,9 @@
 {
+  "CVOPRL": {
+    "cash_dividend": "15%",
+    "declared": "2026-10-25",
+    "eps_annual": "4.93"
+  },
   "DULAMIACOT": {
     "cash_dividend": "1%",
     "declared": "2026-10-19",
@@ -18,6 +23,11 @@
     "cash_dividend": "55%",
     "declared": "2026-10-18",
     "eps_annual": "31.76"
+  },
+  "SAMORITA": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-25",
+    "eps_annual": "1.12"
   },
   "SHARPIND": {
     "bonus_stock_dividend": "0%",
