@@ -14,6 +14,12 @@
     "declared": "2026-10-19",
     "eps_annual": "6.36"
   },
+  "MIRACLEIND": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-26",
+    "eps_annual": "-3.12"
+  },
   "QUASEMIND": {
     "bonus_stock_dividend": "8%",
     "declared": "2026-10-19",
@@ -34,5 +40,10 @@
     "cash_dividend": "0%",
     "declared": "2026-10-19",
     "eps_annual": "-2.39"
+  },
+  "SQUARETEXT": {
+    "cash_dividend": "32%",
+    "declared": "2026-10-26",
+    "eps_annual": "4.50"
   }
 }
