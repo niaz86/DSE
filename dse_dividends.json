@@ -1,4 +1,38 @@
 {
+  "ACMELAB": {
+    "cash_dividend": "40%",
+    "declared": "2026-10-27",
+    "eps_annual": "12.65"
+  },
+  "ADVENT": {
+    "cash_dividend": "0.15%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.42"
+  },
+  "AMCL(PRAN)": {
+    "cash_dividend": "32%",
+    "declared": "2026-10-27",
+    "eps_annual": "5.03"
+  },
+  "BENGALWTL": {
+    "cash_dividend": "5%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.57"
+  },
+  "CENTRALPHL": {
+    "declared": "2026-10-27",
+    "eps_annual": "-0.17"
+  },
+  "COPPERTECH": {
+    "cash_dividend": "3%",
+    "declared": "2026-10-27",
+    "eps_annual": "1.00"
+  },
+  "CROWNCEMNT": {
+    "cash_dividend": "22.50%",
+    "declared": "2026-10-27",
+    "eps_annual": "5.08"
+  },
   "CVOPRL": {
     "cash_dividend": "15%",
     "declared": "2026-10-25",
@@ -9,10 +43,39 @@
     "declared": "2026-10-19",
     "eps_annual": "0.20"
   },
+  "HWAWELLTEX": {
+    "cash_dividend": "20%",
+    "declared": "2026-10-27",
+    "eps_annual": "3.71"
+  },
+  "JMISMDL": {
+    "declared": "2026-10-27",
+    "eps_annual": "-2.00"
+  },
+  "KAY&QUE": {
+    "bonus_stock_dividend": "5%",
+    "declared": "2026-10-27",
+    "eps_annual": "11.25"
+  },
+  "KDSALTD": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-27",
+    "eps_annual": "2.20"
+  },
+  "MALEKSPIN": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-27",
+    "eps_annual": "6.93"
+  },
   "MATINSPINN": {
     "bonus_stock_dividend": "10%",
     "declared": "2026-10-19",
     "eps_annual": "6.36"
+  },
+  "MHSML": {
+    "cash_dividend": "2.50%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.74"
   },
   "MIRACLEIND": {
     "bonus_stock_dividend": "0%",
@@ -20,15 +83,41 @@
     "declared": "2026-10-26",
     "eps_annual": "-3.12"
   },
+  "MIRAKHTER": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-27",
+    "eps_annual": "-6.58"
+  },
+  "MONNOFABR": {
+    "cash_dividend": "0.10%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.02"
+  },
   "QUASEMIND": {
     "bonus_stock_dividend": "8%",
     "declared": "2026-10-19",
     "eps_annual": "1.07"
   },
+  "RAHIMTEXT": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-27",
+    "eps_annual": "2.97"
+  },
+  "RANFOUNDRY": {
+    "cash_dividend": "23%",
+    "declared": "2026-10-27",
+    "eps_annual": "3.90"
+  },
   "RENATA": {
     "cash_dividend": "55%",
     "declared": "2026-10-18",
     "eps_annual": "31.76"
+  },
+  "RUNNERAUTO": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-27",
+    "eps_annual": "1.70"
   },
   "SAMORITA": {
     "cash_dividend": "10%",
@@ -41,9 +130,39 @@
     "declared": "2026-10-19",
     "eps_annual": "-2.39"
   },
+  "SILCOPHL": {
+    "cash_dividend": "0.50%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.33"
+  },
+  "SONALIPAPR": {
+    "cash_dividend": "42%",
+    "declared": "2026-10-27",
+    "eps_annual": "7.34"
+  },
+  "SPCL": {
+    "cash_dividend": "40%",
+    "declared": "2026-10-27",
+    "eps_annual": "6.04"
+  },
   "SQUARETEXT": {
     "cash_dividend": "32%",
     "declared": "2026-10-26",
     "eps_annual": "4.50"
+  },
+  "SQURPHARMA": {
+    "cash_dividend": "130%",
+    "declared": "2026-10-27",
+    "eps_annual": "31.24"
+  },
+  "TITASGAS": {
+    "cash_dividend": "2%",
+    "declared": "2026-10-27",
+    "eps_annual": "-6.02"
+  },
+  "TOSRIFA": {
+    "cash_dividend": "1.50%",
+    "declared": "2026-10-27",
+    "eps_annual": "0.30"
   }
 }
