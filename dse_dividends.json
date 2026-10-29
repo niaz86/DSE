@@ -1,8 +1,24 @@
 {
+  "AAMRANET": {
+    "cash_dividend": "0.20%",
+    "declared": "2026-10-29",
+    "eps_annual": "-0.80"
+  },
   "ACFL": {
     "cash_dividend": "10%",
     "declared": "2026-10-28",
     "eps_annual": "0.37"
+  },
+  "ACI": {
+    "bonus_stock_dividend": "5%",
+    "cash_dividend": "15%",
+    "declared": "2026-10-29",
+    "eps_annual": "-8.59"
+  },
+  "ACIFORMULA": {
+    "cash_dividend": "20%",
+    "declared": "2026-10-29",
+    "eps_annual": "7.96"
   },
   "ACMELAB": {
     "cash_dividend": "40%",
@@ -19,10 +35,20 @@
     "declared": "2026-10-27",
     "eps_annual": "0.42"
   },
+  "AGNISYSL": {
+    "cash_dividend": "2.50%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.96"
+  },
   "AL-HAJTEX": {
     "cash_dividend": "1%",
     "declared": "2026-10-28",
     "eps_annual": "-2.85"
+  },
+  "ALLTEX": {
+    "cash_dividend": "1.00%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.27"
   },
   "AMANFEED": {
     "cash_dividend": "10.50%",
@@ -50,6 +76,11 @@
     "declared": "2026-10-28",
     "eps_annual": "-3.77"
   },
+  "BARKAPOWER": {
+    "cash_dividend": "2%",
+    "declared": "2026-10-29",
+    "eps_annual": "1.10"
+  },
   "BBS": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
@@ -76,6 +107,22 @@
     "declared": "2026-10-27",
     "eps_annual": "0.57"
   },
+  "BPML": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-42.74"
+  },
+  "BPPL": {
+    "cash_dividend": "5%",
+    "declared": "2026-10-29",
+    "eps_annual": "3.48"
+  },
+  "BXPHARMA": {
+    "cash_dividend": "60%",
+    "declared": "2026-10-29",
+    "eps_annual": "20.17"
+  },
   "CENTRALPHL": {
     "declared": "2026-10-27",
     "eps_annual": "-0.17"
@@ -95,6 +142,17 @@
     "declared": "2026-10-25",
     "eps_annual": "4.93"
   },
+  "DESHBANDHU": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-3.15"
+  },
+  "DSHGARME": {
+    "cash_dividend": "2%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.48"
+  },
   "DSSL": {
     "cash_dividend": "0.20%",
     "declared": "2026-10-28",
@@ -105,10 +163,34 @@
     "declared": "2026-10-19",
     "eps_annual": "0.20"
   },
+  "EGEN": {
+    "cash_dividend": "1.00%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.77"
+  },
+  "ESQUIRENIT": {
+    "declared": "2026-10-29",
+    "eps_annual": "-2.68"
+  },
   "ETL": {
     "cash_dividend": "2.50%",
     "declared": "2026-10-28",
     "eps_annual": "0.31"
+  },
+  "FARCHEM": {
+    "cash_dividend": "0.10%",
+    "declared": "2026-10-29",
+    "eps_annual": "-3.33"
+  },
+  "GBBPOWER": {
+    "cash_dividend": "0.50%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.07"
+  },
+  "GENEXIL": {
+    "cash_dividend": "1%",
+    "declared": "2026-10-29",
+    "eps_annual": "2.03"
   },
   "GHAIL": {
     "cash_dividend": "1%",
@@ -126,10 +208,21 @@
     "declared": "2026-10-27",
     "eps_annual": "3.71"
   },
+  "ICB": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-7.52"
+  },
   "IFADAUTOS": {
     "cash_dividend": "3%",
     "declared": "2026-10-28",
     "eps_annual": "0.45"
+  },
+  "INDEXAGRO": {
+    "cash_dividend": "12.50%",
+    "declared": "2026-10-29",
+    "eps_annual": "4.10"
   },
   "ISNLTD": {
     "bonus_stock_dividend": "0%",
@@ -146,6 +239,12 @@
     "declared": "2026-10-27",
     "eps_annual": "-2.00"
   },
+  "JUTESPINN": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-40.20"
+  },
   "KAY&QUE": {
     "bonus_stock_dividend": "5%",
     "declared": "2026-10-27",
@@ -156,6 +255,11 @@
     "declared": "2026-10-27",
     "eps_annual": "2.20"
   },
+  "KPCL": {
+    "cash_dividend": "7.50%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.51"
+  },
   "MALEKSPIN": {
     "cash_dividend": "10%",
     "declared": "2026-10-27",
@@ -165,6 +269,12 @@
     "bonus_stock_dividend": "10%",
     "declared": "2026-10-19",
     "eps_annual": "6.36"
+  },
+  "MEGHNACEM": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-63.68"
   },
   "MHSML": {
     "cash_dividend": "2.50%",
@@ -188,10 +298,33 @@
     "declared": "2026-10-28",
     "eps_annual": "11.04"
   },
+  "MLDYEING": {
+    "cash_dividend": "0.10%",
+    "declared": "2026-10-29",
+    "eps_annual": "-0.97"
+  },
+  "MONNOAGML": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.04"
+  },
+  "MONNOCERA": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.09"
+  },
   "MONNOFABR": {
     "cash_dividend": "0.10%",
     "declared": "2026-10-27",
     "eps_annual": "0.02"
+  },
+  "NAVANAPHARM": {
+    "bonus_stock_dividend": "8%",
+    "cash_dividend": "6%",
+    "declared": "2026-10-29",
+    "eps_annual": "5.93"
   },
   "NPOLYMER": {
     "cash_dividend": "3%",
@@ -214,6 +347,17 @@
     "declared": "2026-10-19",
     "eps_annual": "1.07"
   },
+  "QUEENSOUTH": {
+    "cash_dividend": "2%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.28"
+  },
+  "RAHIMAFOOD": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-0.25"
+  },
   "RAHIMTEXT": {
     "cash_dividend": "10%",
     "declared": "2026-10-27",
@@ -224,20 +368,52 @@
     "declared": "2026-10-27",
     "eps_annual": "3.90"
   },
+  "RDFOOD": {
+    "cash_dividend": "1%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.54"
+  },
   "RENATA": {
     "cash_dividend": "55%",
     "declared": "2026-10-18",
     "eps_annual": "31.76"
+  },
+  "RENWICKJA": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-10.63"
   },
   "RUNNERAUTO": {
     "cash_dividend": "10%",
     "declared": "2026-10-27",
     "eps_annual": "1.70"
   },
+  "SAFKOSPINN": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-4.70"
+  },
+  "SAIHAMCOT": {
+    "cash_dividend": "7.50%",
+    "declared": "2026-10-29",
+    "eps_annual": "1.03"
+  },
+  "SAIHAMTEX": {
+    "cash_dividend": "5%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.29"
+  },
   "SAMORITA": {
     "cash_dividend": "10%",
     "declared": "2026-10-25",
     "eps_annual": "1.12"
+  },
+  "SAPORTL": {
+    "cash_dividend": "25%",
+    "declared": "2026-10-29",
+    "eps_annual": "2.61"
   },
   "SHARPIND": {
     "bonus_stock_dividend": "0%",
@@ -250,6 +426,12 @@
     "declared": "2026-10-28",
     "eps_annual": "1.03"
   },
+  "SHEPHERD": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-1.60"
+  },
   "SHYAMPSUG": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
@@ -260,6 +442,16 @@
     "cash_dividend": "0.50%",
     "declared": "2026-10-27",
     "eps_annual": "0.33"
+  },
+  "SILVAPHL": {
+    "cash_dividend": "0.10%",
+    "declared": "2026-10-29",
+    "eps_annual": "-1.19"
+  },
+  "SINOBANGLA": {
+    "cash_dividend": "11%",
+    "declared": "2026-10-29",
+    "eps_annual": "1.34"
   },
   "SONALIPAPR": {
     "cash_dividend": "42%",
@@ -286,6 +478,12 @@
     "declared": "2026-10-27",
     "eps_annual": "31.24"
   },
+  "STYLECRAFT": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-10-29",
+    "eps_annual": "-0.34"
+  },
   "SUMITPOWER": {
     "cash_dividend": "10.50%",
     "declared": "2026-10-28",
@@ -294,6 +492,11 @@
   "TAMIJTEX": {
     "declared": "2026-10-28",
     "eps_annual": "4.29"
+  },
+  "TECHNODRUG": {
+    "cash_dividend": "10%",
+    "declared": "2026-10-29",
+    "eps_annual": "1.51"
   },
   "TITASGAS": {
     "cash_dividend": "2%",
@@ -305,6 +508,11 @@
     "declared": "2026-10-27",
     "eps_annual": "0.30"
   },
+  "UNIQUEHRL": {
+    "cash_dividend": "12%",
+    "declared": "2026-10-29",
+    "eps_annual": "3.53"
+  },
   "UPGDCL": {
     "cash_dividend": "60%",
     "declared": "2026-10-28",
@@ -315,6 +523,11 @@
     "cash_dividend": "0%",
     "declared": "2026-10-28",
     "eps_annual": "-4.79"
+  },
+  "VFSTDL": {
+    "cash_dividend": "0.10%",
+    "declared": "2026-10-29",
+    "eps_annual": "0.02"
   },
   "ZAHEENSPIN": {
     "bonus_stock_dividend": "0%",
