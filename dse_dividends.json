@@ -190,6 +190,11 @@
     "declared": "2026-10-19",
     "eps_annual": "0.20"
   },
+  "EASTRNLUB": {
+    "cash_dividend": "115%",
+    "declared": "2026-11-05",
+    "eps_annual": "38.20"
+  },
   "EGEN": {
     "cash_dividend": "1.00%",
     "declared": "2026-10-29",
@@ -223,6 +228,12 @@
     "cash_dividend": "1%",
     "declared": "2026-10-28",
     "eps_annual": "-0.57"
+  },
+  "GHCL": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-05",
+    "eps_annual": "-3.30"
   },
   "GSPFINANCE": {
     "bonus_stock_dividend": "0%",
