@@ -135,6 +135,11 @@
     "declared": "2026-10-29",
     "eps_annual": "3.48"
   },
+  "BSC": {
+    "cash_dividend": "25%",
+    "declared": "2026-11-09",
+    "eps_annual": "19.11"
+  },
   "BXPHARMA": {
     "cash_dividend": "60%",
     "declared": "2026-10-29",
@@ -199,6 +204,11 @@
     "cash_dividend": "1.00%",
     "declared": "2026-10-29",
     "eps_annual": "0.77"
+  },
+  "EPGL": {
+    "cash_dividend": "1%",
+    "declared": "2026-11-09",
+    "eps_annual": "-11.16"
   },
   "ESQUIRENIT": {
     "declared": "2026-10-29",
@@ -278,6 +288,11 @@
     "cash_dividend": "0%",
     "declared": "2026-10-28",
     "eps_annual": "-0.51"
+  },
+  "JAMUNAOIL": {
+    "cash_dividend": "120%",
+    "declared": "2026-11-09",
+    "eps_annual": "38.52"
   },
   "JHRML": {
     "cash_dividend": "2.50%",
@@ -450,10 +465,20 @@
     "declared": "2026-11-04",
     "eps_annual": "28.05"
   },
+  "POWERGRID": {
+    "cash_dividend": "5%",
+    "declared": "2026-11-09",
+    "eps_annual": "3.86"
+  },
   "PREMIERCEM": {
     "cash_dividend": "10%",
     "declared": "2026-10-28",
     "eps_annual": "0.72"
+  },
+  "PTL": {
+    "cash_dividend": "15%",
+    "declared": "2026-11-09",
+    "eps_annual": "7.61"
   },
   "QUASEMIND": {
     "bonus_stock_dividend": "8%",
