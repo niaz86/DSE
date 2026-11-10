@@ -345,6 +345,11 @@
     "declared": "2026-11-08",
     "eps_annual": "2.53"
   },
+  "MAGURAPLEX": {
+    "bonus_stock_dividend": "25%",
+    "declared": "2026-11-10",
+    "eps_annual": "2.23"
+  },
   "MALEKSPIN": {
     "cash_dividend": "10%",
     "declared": "2026-10-27",
@@ -417,6 +422,12 @@
     "declared": "2026-10-27",
     "eps_annual": "0.02"
   },
+  "MONOSPOOL": {
+    "bonus_stock_dividend": "10%",
+    "cash_dividend": "10%",
+    "declared": "2026-11-10",
+    "eps_annual": "3.29"
+  },
   "MPETROLEUM": {
     "cash_dividend": "210%",
     "declared": "2026-11-03",
@@ -449,6 +460,17 @@
     "declared": "2026-11-03",
     "eps_annual": "0.38"
   },
+  "ORIONINFU": {
+    "cash_dividend": "2%",
+    "declared": "2026-11-10",
+    "eps_annual": "1.43"
+  },
+  "ORIONPHARM": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-10",
+    "eps_annual": "-1.93"
+  },
   "PADMAOIL": {
     "cash_dividend": "170%",
     "declared": "2026-11-08",
@@ -477,7 +499,7 @@
   },
   "PTL": {
     "cash_dividend": "15%",
-    "declared": "2026-11-09",
+    "declared": "2026-11-10",
     "eps_annual": "7.61"
   },
   "QUASEMIND": {
