@@ -87,6 +87,12 @@
     "declared": "2026-11-02",
     "eps_annual": "4.68"
   },
+  "ATLASBANG": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-11",
+    "eps_annual": "-0.97"
+  },
   "AZIZPIPES": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
@@ -180,6 +186,11 @@
     "declared": "2026-10-29",
     "eps_annual": "-3.15"
   },
+  "DOMINAGE": {
+    "cash_dividend": "0.50%",
+    "declared": "2026-11-11",
+    "eps_annual": "-0.29"
+  },
   "DSHGARME": {
     "cash_dividend": "2%",
     "declared": "2026-10-29",
@@ -199,6 +210,12 @@
     "cash_dividend": "115%",
     "declared": "2026-11-05",
     "eps_annual": "38.20"
+  },
+  "ECABLES": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-11",
+    "eps_annual": "-4.66"
   },
   "EGEN": {
     "cash_dividend": "1.00%",
@@ -283,6 +300,11 @@
     "declared": "2026-10-29",
     "eps_annual": "4.10"
   },
+  "INTRACO": {
+    "cash_dividend": "0.22%",
+    "declared": "2026-11-11",
+    "eps_annual": "-0.58"
+  },
   "ISNLTD": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
@@ -313,6 +335,11 @@
     "bonus_stock_dividend": "5%",
     "declared": "2026-10-27",
     "eps_annual": "11.25"
+  },
+  "KBPPWBIL": {
+    "cash_dividend": "0.25%",
+    "declared": "2026-11-11",
+    "eps_annual": "0.30"
   },
   "KDSALTD": {
     "cash_dividend": "10%",
