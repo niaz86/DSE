@@ -476,6 +476,12 @@
     "declared": "2026-10-28",
     "eps_annual": "0.42"
   },
+  "NTLTUBES": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-12",
+    "eps_annual": "-2.04"
+  },
   "OAL": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
@@ -731,6 +737,12 @@
     "cash_dividend": "0.10%",
     "declared": "2026-10-29",
     "eps_annual": "0.02"
+  },
+  "WMSHIPYARD": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-12",
+    "eps_annual": "-0.01"
   },
   "ZAHEENSPIN": {
     "bonus_stock_dividend": "0%",
