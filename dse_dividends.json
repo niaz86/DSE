@@ -25,6 +25,11 @@
     "declared": "2026-10-27",
     "eps_annual": "12.65"
   },
+  "ACMEPL": {
+    "cash_dividend": "0.02%",
+    "declared": "2026-11-15",
+    "eps_annual": "-0.64"
+  },
   "ADNTEL": {
     "cash_dividend": "10%",
     "declared": "2026-10-28",
@@ -59,6 +64,11 @@
     "cash_dividend": "10.50%",
     "declared": "2026-10-28",
     "eps_annual": "0.24"
+  },
+  "AMBEEPHA": {
+    "cash_dividend": "10%",
+    "declared": "2026-11-15",
+    "eps_annual": "1.06"
   },
   "AMCL(PRAN)": {
     "cash_dividend": "32%",
@@ -124,6 +134,16 @@
     "cash_dividend": "10%",
     "declared": "2026-10-28",
     "eps_annual": "0.80"
+  },
+  "BDTHAI": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-15",
+    "eps_annual": "-2.43"
+  },
+  "BDTHAIFOOD": {
+    "declared": "2026-11-15",
+    "eps_annual": "-1.02"
   },
   "BENGALWTL": {
     "cash_dividend": "5%",
@@ -283,6 +303,11 @@
     "cash_dividend": "20%",
     "declared": "2026-10-27",
     "eps_annual": "3.71"
+  },
+  "IBP": {
+    "cash_dividend": "0.15%",
+    "declared": "2026-11-15",
+    "eps_annual": "0.01"
   },
   "ICB": {
     "bonus_stock_dividend": "0%",
