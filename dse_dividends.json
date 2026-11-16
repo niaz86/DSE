@@ -150,6 +150,10 @@
     "declared": "2026-10-27",
     "eps_annual": "0.57"
   },
+  "BESTHLDNG": {
+    "cash_dividend": "2.5%",
+    "declared": "2026-11-16"
+  },
   "BPML": {
     "bonus_stock_dividend": "0%",
     "cash_dividend": "0%",
