@@ -397,6 +397,12 @@
     "declared": "2026-11-01",
     "eps_annual": "0.025"
   },
+  "LANKABAFIN": {
+    "bonus_stock_dividend": "0%",
+    "cash_dividend": "0%",
+    "declared": "2026-11-19",
+    "eps_annual": "-2.12"
+  },
   "LEGACYFOOT": {
     "cash_dividend": "1%",
     "declared": "2026-11-01",
